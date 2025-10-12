@@ -29,8 +29,9 @@ whitelisted_users:
   - "111222333444555666"  # 例: 信頼できるユーザー
   # ここにホワイトリストに追加したいユーザーIDを追加
 
+
 # === スパムフィルター設定 ===
-enable_spam_filter: true  # スパムフィルターを有効化
+enable_spam_filter: true
 
 # Discord招待リンクをブロック
 block_discord_invites: true
@@ -39,7 +40,10 @@ discord_invite_patterns:
   - 'discord\.com/invite/[\w-]+'
   - 'discordapp\.com/invite/[\w-]+'
   - 'dsc\.gg/[\w-]+'
-  # 追加のパターンをここに記載
+  # --- 追加案 ---
+  - 'discord\.new'
+  - 'discord\.gift'
+  - 'dis\.gd/[\w-]+'
 
 # 疑わしいリンクをブロック
 block_suspicious_links: true
@@ -48,14 +52,57 @@ blocked_link_patterns:
   - 'tinyurl\.com'
   - 'grabify'
   - 'iplogger'
-  - '.*\.tk'      # 無料ドメイン
-  - '.*\.ml'      # 無料ドメイン
-  - '.*\.ga'      # 無料ドメイン
-  - '.*\.cf'      # 無料ドメイン
-  - '.*\.gq'      # 無料ドメイン
+  - '.*\.tk'
+  - '.*\.ml'
+  - '.*\.ga'
+  - '.*\.cf'
+  - '.*\.gq'
   - 'cutt\.ly'
   - 'shorturl\.at'
-  # ブロックしたいドメインパターンを追加
+  # --- 追加案 ---
+  # 他の短縮URLサービス
+  - 'is\.gd'
+  - 't\.co'       # Twitterの短縮URL（悪用されることも）
+  - 'ow\.ly'
+  # 他の無料ドメインやスパムで使われやすいドメイン
+  - '.*\.xyz'
+  - '.*\.club'
+  - '.*\.top'
+  - '.*\.buzz'
+  # フィッシングサイトで使われがちな文字列
+  - 'discrod'     # Discordのスペルミス
+  - 'dicsord'
+  - 'steamcommunytu' # Steamのスペルミス
+  - 'free-nitro'
+  # 実行ファイルの直接リンク
+  - '.*\.exe$'
+  - '.*\.scr$'
+  - '.*\.bat$'
+  # IPアドレス直打ちのリンク
+  - 'https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+  # 暗号通貨・NFT詐欺
+  - 'free.*crypto'
+  - 'nft.*giveaway'
+  - 'airdrop'
+
+  # Nitro詐欺の多様なパターン
+  - 'nitro.*free'
+  - 'gift.*nitro'
+  - '@everyone.*nitro'
+
+  # 一般的なフィッシングワード
+  - 'verify.*account'
+  - 'claim.*prize'
+  - 'urgent.*action'
+  - 'suspended.*account'
+
+  # Google Formsなどを使った詐欺
+  - 'forms\.gle'  # 悪用されることがあるため注意
+
+  # 危険なファイルホスティング
+  - 'mediafire\.com'
+  - 'mega\.nz'
+  - 'gofile\.io'
 
 # 過度な絵文字をブロック
 block_excessive_emojis: true
