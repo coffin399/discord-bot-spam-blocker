@@ -35,14 +35,6 @@ async def mobile_identify(self):
     await self.send_as_json(payload)
 
 
-# intentsの設定
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-
-bot = commands.Bot(command_prefix='!!!', intents=intents)
-
-
 # 設定を読み込む
 def load_config():
     import shutil
@@ -61,165 +53,87 @@ def load_config():
         return yaml.safe_load(f)
 
 
-config = load_config()
+# エラーハンドラーをセットアップ
+def setup_error_handler(bot):
+    """グローバルエラーハンドラーを設定"""
+
+    @bot.event
+    async def on_command_error(ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            return
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f'❌ 必要な引数が不足しています: {error.param.name}')
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send('❌ このコマンドを実行する権限がありません')
+        else:
+            await ctx.send(f'❌ エラーが発生しました: {str(error)}')
+            print(f'Error: {error}')
+
+
+# intentsの設定
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True  # メンバー参加イベントを受信するために必要
+intents.guilds = True
+
+bot = commands.Bot(command_prefix='!!!', intents=intents)
 
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} でログインしました')
-    print(f'許可されたBOT: {config.get("allowed_bots", [])}')
-    print(f'監視対象サーバー: {config.get("monitored_guilds", [])}')
-    print(f'監視対象チャンネル: {config.get("monitored_channels", [])}')
+    print('=' * 50)
+    print(f'🤖 {bot.user} でログインしました')
     print('📱 モバイルステータスで表示されています')
+    print(f'🌐 {len(bot.guilds)} サーバーに接続中')
+    print('=' * 50)
 
     # ステータスメッセージを設定
     await bot.change_presence(
-        activity=discord.Game(name="blocking spam...")
+        activity=discord.Game(name="spam blocker v1.0")
     )
 
 
-@bot.event
-async def on_message(message):
-    # BOT自身のメッセージは無視
-    if message.author == bot.user:
-        return
-
-    # DMは無視
-    if not message.guild:
-        await bot.process_commands(message)
-        return
-
-    # 設定の存在確認
-    if not config:
-        await bot.process_commands(message)
-        return
-
-    # 監視対象サーバーのチェック
-    monitored_guilds = config.get('monitored_guilds', [])
-    if monitored_guilds and str(message.guild.id) not in monitored_guilds:
-        await bot.process_commands(message)
-        return
-
-    # 監視対象チャンネルかチェック
-    monitored_channels = config.get('monitored_channels', [])
-    channel_id = str(message.channel.id)
-    if monitored_channels and channel_id not in monitored_channels:
-        await bot.process_commands(message)
-        return
-
-    # 管理者は常に許可
-    # message.authorがMemberオブジェクトであることを確認
-    if hasattr(message.author, 'guild_permissions') and message.author.guild_permissions.administrator:
-        await bot.process_commands(message)
-        return
-
-    # BOTの場合
-    if message.author.bot:
-        allowed_bots = config.get('allowed_bots', [])
-        # 許可リストに含まれていないBOTのメッセージを削除
-        if str(message.author.id) not in allowed_bots:
-            await message.delete()
-            print(f'削除: 許可されていないBOT {message.author.name} (ID: {message.author.id})')
-
-            # 警告メッセージを送信(オプション)
-            if config.get('send_warning', False):
-                warning = await message.channel.send(
-                    f'⚠️ 許可されていないBOT `{message.author.name}` の投稿を削除しました。'
-                )
-                # 5秒後に警告メッセージも削除
-                await warning.delete(delay=5)
-    else:
-        # 一般ユーザーの投稿処理(必要に応じて)
-        pass
-
-    await bot.process_commands(message)
+# エラーハンドラーをセットアップ
+setup_error_handler(bot)
 
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def add_guild(ctx, guild_id: str):
-    """監視対象サーバーを追加"""
-    monitored_guilds = config.get('monitored_guilds', [])
-    if guild_id not in monitored_guilds:
-        monitored_guilds.append(guild_id)
-        config['monitored_guilds'] = monitored_guilds
-        with open('config.yaml', 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, allow_unicode=True)
-        await ctx.send(f'✅ サーバー ID `{guild_id}` を監視対象に追加しました')
-    else:
-        await ctx.send(f'⚠️ サーバー ID `{guild_id}` は既に監視対象です')
+# Cogを読み込む
+async def load_extensions():
+    """全てのCogを読み込む"""
+    extensions = [
+        'ARONA.spam_blocker.spam_blocker_cog',
+        'ARONA.music.music_cog',
+        'ARONA.message.llm_cog',  # 新しく追加
+    ]
 
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def reload_config(ctx):
-    """設定ファイルを再読み込み"""
-    global config
-    try:
-        config = load_config()
-        await ctx.send('✅ 設定ファイルを再読み込みしました')
-    except Exception as e:
-        await ctx.send(f'❌ エラー: {e}')
-
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def list_bots(ctx):
-    """許可されているBOTのリストを表示"""
-    bot_list = '\n'.join([f'- <@{bot_id}>' for bot_id in config['allowed_bots']])
-    embed = discord.Embed(
-        title='許可されたBOT一覧',
-        description=bot_list if bot_list else 'なし',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
-
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def add_bot(ctx, bot_id: str):
-    """許可BOTリストにBOTを追加"""
-    if bot_id not in config['allowed_bots']:
-        config['allowed_bots'].append(bot_id)
-        with open('config.yaml', 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, allow_unicode=True)
-        await ctx.send(f'✅ BOT ID `{bot_id}` を許可リストに追加しました')
-    else:
-        await ctx.send(f'⚠️ BOT ID `{bot_id}` は既に許可リストに含まれています')
-
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def remove_bot(ctx, bot_id: str):
-    """許可BOTリストからBOTを削除"""
-    if bot_id in config['allowed_bots']:
-        config['allowed_bots'].remove(bot_id)
-        with open('config.yaml', 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, allow_unicode=True)
-        await ctx.send(f'✅ BOT ID `{bot_id}` を許可リストから削除しました')
-    else:
-        await ctx.send(f'⚠️ BOT ID `{bot_id}` は許可リストに含まれていません')
-
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def add_channel(ctx, channel_id: str):
-    """監視対象チャンネルを追加"""
-    if channel_id not in config['monitored_channels']:
-        config['monitored_channels'].append(channel_id)
-        with open('config.yaml', 'w', encoding='utf-8') as f:
-            yaml.dump(config, f, allow_unicode=True)
-        await ctx.send(f'✅ チャンネル ID `{channel_id}` を監視対象に追加しました')
-    else:
-        await ctx.send(f'⚠️ チャンネル ID `{channel_id}` は既に監視対象です')
+    for ext in extensions:
+        try:
+            await bot.load_extension(ext)
+            print(f'✅ {ext} を読み込みました')
+        except Exception as e:
+            print(f'❌ {ext} の読み込みに失敗しました: {e}')
 
 
 # BOTを起動
 if __name__ == '__main__':
+    config = load_config()
     token = config.get('bot_token')
+
     if not token:
-        print('エラー: config.yaml に bot_token が設定されていません')
+        print('❌ エラー: config.yaml に bot_token が設定されていません')
+        exit(1)
     else:
         # モバイルステータスを有効化
         discord.gateway.DiscordWebSocket.identify = mobile_identify
-        bot.run(token)
+
+        # Cogを読み込んでからBOTを起動
+        import asyncio
+
+
+        async def main():
+            async with bot:
+                await load_extensions()
+                await bot.start(token)
+
+
+        asyncio.run(main())

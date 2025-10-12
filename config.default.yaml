@@ -89,3 +89,36 @@ custom_blocked_words:
 
 # 削除時に警告メッセージを送信するか
 send_warning: true
+
+#=========================
+# AI設定
+#=========================
+# OpenAI API キー
+openai_api_key: "YOUR_OPENAI_API_KEY_HERE"
+
+# OpenAI互換API用のベースURL（オプション）
+# 例: "https://api.groq.com/openai/v1" (Groq)
+# 例: "https://api.together.xyz/v1" (Together AI)
+# 例: "http://localhost:1234/v1" (LM Studio)
+# 空欄または削除すると通常のOpenAI APIを使用
+openai_base_url: "https://integrate.api.nvidia.com/v1"
+
+# モデル設定
+model: "nvidia_nim/moonshotai/kimi-k2-instruct-0905"  # または互換APIのモデル名（例: llama-3.1-70b-versatile）
+max_tokens: 1000  # ようこそメッセージの最大トークン数
+temperature: 0.6  # 0.0-2.0 の範囲。高いほどクリエイティブ
+
+# システムプロンプト（ようこそメッセージ生成用）
+system_prompt: |
+  あなたは、サーバーに入ってきた人をもてなす少女です。(メンタルモデル:少女、名前はアロナ(ARONA))
+  相手の名称は「先生」です。
+  与えられたサーバー情報を元に、温かく親しみやすい"ようこそメッセージ"を生成してください。
+  
+   要件：
+   - 200文字前後(実際は短くてよい)で簡潔に
+   - フレンドリーで温かい雰囲気
+   - サーバー名を自然に含める(サーバー名:PLANA's Lounge)
+   - 絵文字を使用
+   - 新規メンバーが安心してコミュニケーションを始められるような内容
+   - 分からないことはPLANAにメンションして聞くように誘導する
+   - まず先に日本語で文章を作成し、その後改行して英語でも文章を作成する

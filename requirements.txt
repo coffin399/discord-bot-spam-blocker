@@ -1,2 +1,4 @@
 discord.py
 pyyaml
+yt-dlp
+openai
