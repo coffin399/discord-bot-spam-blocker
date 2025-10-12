@@ -1,6 +1,11 @@
 # Discord BOTトークン
 bot_token: "YOUR_BOT_TOKEN_HERE"
 
+# 監視対象のサーバーID（空の場合は全サーバー）
+monitored_guilds:
+  - "1426762522974883953"  # 例: あなたのサーバー
+  # ここに監視したいサーバーIDを追加
+
 # 許可するBOTのIDリスト
 allowed_bots:
   - "1031673203774464160" # PLANA

@@ -67,8 +67,9 @@ config = load_config()
 @bot.event
 async def on_ready():
     print(f'{bot.user} でログインしました')
-    print(f'許可されたBOT: {config["allowed_bots"]}')
-    print(f'監視対象チャンネル: {config["monitored_channels"]}')
+    print(f'許可されたBOT: {config.get("allowed_bots", [])}')
+    print(f'監視対象サーバー: {config.get("monitored_guilds", [])}')
+    print(f'監視対象チャンネル: {config.get("monitored_channels", [])}')
     print('📱 モバイルステータスで表示されています')
 
     # ステータスメッセージを設定
@@ -83,9 +84,21 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # 設定の存在確認
+    if not config:
+        await bot.process_commands(message)
+        return
+
+    # 監視対象サーバーのチェック
+    monitored_guilds = config.get('monitored_guilds', [])
+    if monitored_guilds and str(message.guild.id) not in monitored_guilds:
+        await bot.process_commands(message)
+        return
+
     # 監視対象チャンネルかチェック
+    monitored_channels = config.get('monitored_channels', [])
     channel_id = str(message.channel.id)
-    if channel_id not in config['monitored_channels']:
+    if monitored_channels and channel_id not in monitored_channels:
         await bot.process_commands(message)
         return
 
@@ -96,8 +109,9 @@ async def on_message(message):
 
     # BOTの場合
     if message.author.bot:
+        allowed_bots = config.get('allowed_bots', [])
         # 許可リストに含まれていないBOTのメッセージを削除
-        if str(message.author.id) not in config['allowed_bots']:
+        if str(message.author.id) not in allowed_bots:
             await message.delete()
             print(f'削除: 許可されていないBOT {message.author.name} (ID: {message.author.id})')
 
@@ -113,6 +127,21 @@ async def on_message(message):
         pass
 
     await bot.process_commands(message)
+
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def add_guild(ctx, guild_id: str):
+    """監視対象サーバーを追加"""
+    monitored_guilds = config.get('monitored_guilds', [])
+    if guild_id not in monitored_guilds:
+        monitored_guilds.append(guild_id)
+        config['monitored_guilds'] = monitored_guilds
+        with open('config.yaml', 'w', encoding='utf-8') as f:
+            yaml.dump(config, f, allow_unicode=True)
+        await ctx.send(f'✅ サーバー ID `{guild_id}` を監視対象に追加しました')
+    else:
+        await ctx.send(f'⚠️ サーバー ID `{guild_id}` は既に監視対象です')
 
 
 @bot.command()
