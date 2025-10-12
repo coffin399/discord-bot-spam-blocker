@@ -101,9 +101,9 @@ setup_error_handler(bot)
 async def load_extensions():
     """全てのCogを読み込む"""
     extensions = [
-        'ARONA.spam_blocker.spam_blocker_cog',
+        'ARONA.spam_blocker.spam_blocker_cog.py',
         'ARONA.music.music_cog',
-        'ARONA.message.llm_cog',  # 新しく追加
+        'ARONA.message.welcome_message_cog.py',  # 新しく追加
     ]
 
     for ext in extensions:
