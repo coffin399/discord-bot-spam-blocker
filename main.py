@@ -84,6 +84,11 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # DMは無視
+    if not message.guild:
+        await bot.process_commands(message)
+        return
+
     # 設定の存在確認
     if not config:
         await bot.process_commands(message)
