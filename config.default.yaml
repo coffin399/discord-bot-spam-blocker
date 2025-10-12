@@ -1,11 +1,6 @@
 # Discord BOTトークン
 bot_token: "YOUR_BOT_TOKEN_HERE"
 
-# 監視対象のサーバーID（空の場合は全サーバー）
-monitored_guilds:
-  - "1426762522974883953"  # 例: あなたのサーバー
-  # ここに監視したいサーバーIDを追加
-
 # 許可するBOTのIDリスト
 allowed_bots:
   - "1031673203774464160" # PLANA
@@ -18,9 +13,79 @@ allowed_bots:
   - "1233072112139501608" # 鯖ちゃんねる
   # ここに許可したいBOTのIDを追加
 
+# 監視対象のサーバーID（空の場合は全サーバー）
+monitored_guilds:
+  - "1426762522974883953"  # 例: あなたのサーバー
+  # ここに監視したいサーバーIDを追加
+
 # 監視対象のチャンネルID（空の場合は全チャンネル）
 monitored_channels:
+  - "345678901234567890"  # 例: general チャンネル
+  - "456789012345678901"  # 例: bot-commands チャンネル
   # ここに監視したいチャンネルIDを追加
+
+# ホワイトリストユーザー（スパムフィルターを無視するユーザー）
+whitelisted_users:
+  - "111222333444555666"  # 例: 信頼できるユーザー
+  # ここにホワイトリストに追加したいユーザーIDを追加
+
+# === スパムフィルター設定 ===
+enable_spam_filter: true  # スパムフィルターを有効化
+
+# Discord招待リンクをブロック
+block_discord_invites: true
+discord_invite_patterns:
+  - 'discord\.gg/[\w-]+'
+  - 'discord\.com/invite/[\w-]+'
+  - 'discordapp\.com/invite/[\w-]+'
+  - 'dsc\.gg/[\w-]+'
+  # 追加のパターンをここに記載
+
+# 疑わしいリンクをブロック
+block_suspicious_links: true
+blocked_link_patterns:
+  - 'bit\.ly'
+  - 'tinyurl\.com'
+  - 'grabify'
+  - 'iplogger'
+  - '.*\.tk'      # 無料ドメイン
+  - '.*\.ml'      # 無料ドメイン
+  - '.*\.ga'      # 無料ドメイン
+  - '.*\.cf'      # 無料ドメイン
+  - '.*\.gq'      # 無料ドメイン
+  - 'cutt\.ly'
+  - 'shorturl\.at'
+  # ブロックしたいドメインパターンを追加
+
+# 過度な絵文字をブロック
+block_excessive_emojis: true
+max_emoji_count: 10  # 許容する最大絵文字数
+
+# 過度な大文字をブロック
+block_excessive_caps: true
+caps_ratio_threshold: 0.7  # 大文字の割合（0.7 = 70%）
+
+# 繰り返し文字をブロック
+block_repeated_chars: true
+max_repeated_chars: 5  # 許容する連続文字数
+
+# @everyone/@hereメンションをブロック
+block_mass_mentions: true
+
+# 過度なメンションをブロック
+block_excessive_mentions: true
+max_mention_count: 5  # 許容する最大メンション数
+
+# カスタムNGワード
+custom_blocked_words:
+  - "spam"
+  - "フリーニトロ"
+  - "無料ニトロ"
+  - "free nitro"
+  - "フリーギフト"
+  - "@everyone"
+  - "@here"
+  # ブロックしたいワードを追加
 
 # 削除時に警告メッセージを送信するか
 send_warning: true
