@@ -108,7 +108,8 @@ async def on_message(message):
         return
 
     # 管理者は常に許可
-    if message.author.guild_permissions.administrator:
+    # message.authorがMemberオブジェクトであることを確認
+    if hasattr(message.author, 'guild_permissions') and message.author.guild_permissions.administrator:
         await bot.process_commands(message)
         return
 
@@ -120,7 +121,7 @@ async def on_message(message):
             await message.delete()
             print(f'削除: 許可されていないBOT {message.author.name} (ID: {message.author.id})')
 
-            # 警告メッセージを送信（オプション）
+            # 警告メッセージを送信(オプション)
             if config.get('send_warning', False):
                 warning = await message.channel.send(
                     f'⚠️ 許可されていないBOT `{message.author.name}` の投稿を削除しました。'
@@ -128,7 +129,7 @@ async def on_message(message):
                 # 5秒後に警告メッセージも削除
                 await warning.delete(delay=5)
     else:
-        # 一般ユーザーの投稿処理（必要に応じて）
+        # 一般ユーザーの投稿処理(必要に応じて)
         pass
 
     await bot.process_commands(message)
