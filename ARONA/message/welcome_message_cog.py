@@ -30,6 +30,7 @@ class LLMCog(commands.Cog):
         self.model = self.config.get('model', 'gpt-4-turbo-preview')
         self.max_tokens = self.config.get('max_tokens', 500)
         self.temperature = self.config.get('temperature', 0.8)
+        self.welcome_channel_id = self.config.get('welcome_channel_id')  # 特定のチャンネルID
 
     def _load_config(self):
         """config.yamlから設定を読み込む"""
@@ -51,6 +52,28 @@ class LLMCog(commands.Cog):
         print(f'📝 モデル: {self.model}')
         print(f'💬 システムプロンプト: {len(self.system_prompt)} 文字')
         print(f'👋 ようこそメッセージ: 有効')
+        if self.welcome_channel_id:
+            print(f'📍 ようこそチャンネルID: {self.welcome_channel_id}')
+
+    def _get_welcome_channel(self, guild: discord.Guild):
+        """ようこそメッセージを送信するチャンネルを取得"""
+        # 1. config.yamlで指定されたチャンネルIDを優先
+        if self.welcome_channel_id:
+            channel = guild.get_channel(self.welcome_channel_id)
+            if channel and channel.permissions_for(guild.me).send_messages:
+                return channel
+            else:
+                print(f'⚠️ 指定されたチャンネルID {self.welcome_channel_id} が見つからないか、権限がありません')
+
+        # 2. Discordのシステムチャンネル（サーバー設定で指定されているチャンネル）
+        if guild.system_channel and guild.system_channel.permissions_for(guild.me).send_messages:
+            return guild.system_channel
+
+        # 3. 最初のテキストチャンネル
+        return next(
+            (ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages),
+            None
+        )
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -59,25 +82,21 @@ class LLMCog(commands.Cog):
         if member.bot:
             return
 
-        # システムメッセージチャンネルを取得
-        system_channel = member.guild.system_channel
-        if not system_channel:
-            # システムチャンネルがない場合は最初のテキストチャンネルを使用
-            system_channel = next(
-                (ch for ch in member.guild.text_channels if ch.permissions_for(member.guild.me).send_messages),
-                None
-            )
+        # 送信先チャンネルを決定
+        welcome_channel = self._get_welcome_channel(member.guild)
 
-        if not system_channel:
+        if not welcome_channel:
             print(f'⚠️ {member.guild.name} にメッセージを送信できるチャンネルがありません')
             return
+
+        print(f'📍 送信先チャンネル: #{welcome_channel.name} (ID: {welcome_channel.id})')
 
         try:
             # ようこそメッセージを生成
             welcome_message = await self._generate_welcome_message(member)
 
             # 新規メンバーをメンションして送信
-            await system_channel.send(
+            await welcome_channel.send(
                 f'{member.mention} さん、ようこそ！🎉\n\n{welcome_message}',
                 allowed_mentions=discord.AllowedMentions(users=[member])
             )
@@ -87,7 +106,7 @@ class LLMCog(commands.Cog):
         except LLMError as e:
             print(f'❌ ようこそメッセージの生成エラー: {e}')
             # エラー時はシンプルなメッセージを送信
-            await system_channel.send(
+            await welcome_channel.send(
                 f'{member.mention} さん、ようこそ {member.guild.name} へ！👋',
                 allowed_mentions=discord.AllowedMentions(users=[member])
             )
