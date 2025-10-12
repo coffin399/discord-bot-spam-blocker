@@ -3,6 +3,38 @@ from discord.ext import commands
 import yaml
 import os
 
+
+# Botをモバイルとして識別させるためのカスタム関数
+async def mobile_identify(self):
+    """Botをモバイルとして識別させるためのカスタム関数"""
+    payload = {
+        'op': self.IDENTIFY,
+        'd': {
+            'token': self.token,
+            'properties': {
+                '$os': 'Discord Android',
+                '$browser': 'Discord Android',
+                '$device': 'Discord Android'
+            },
+            'compress': True,
+            'large_threshold': 250,
+            'intents': self._connection.intents.value
+        }
+    }
+    if self.shard_id is not None and self.shard_count is not None:
+        payload['d']['shard'] = [self.shard_id, self.shard_count]
+    state = self._connection
+    if state._activity is not None or state._status is not None:
+        payload['d']['presence'] = {
+            'status': state._status,
+            'game': state._activity,
+            'since': 0,
+            'afk': False
+        }
+    await self.call_hooks('before_identify', self.shard_id, initial=self._initial_identify)
+    await self.send_as_json(payload)
+
+
 # intentsの設定
 intents = discord.Intents.default()
 intents.message_content = True
@@ -37,6 +69,12 @@ async def on_ready():
     print(f'{bot.user} でログインしました')
     print(f'許可されたBOT: {config["allowed_bots"]}')
     print(f'監視対象チャンネル: {config["monitored_channels"]}')
+    print('📱 モバイルステータスで表示されています')
+
+    # ステータスメッセージを設定
+    await bot.change_presence(
+        activity=discord.Game(name="blocking spam...")
+    )
 
 
 @bot.event
@@ -147,4 +185,6 @@ if __name__ == '__main__':
     if not token:
         print('エラー: config.yaml に bot_token が設定されていません')
     else:
+        # モバイルステータスを有効化
+        discord.gateway.DiscordWebSocket.identify = mobile_identify
         bot.run(token)
