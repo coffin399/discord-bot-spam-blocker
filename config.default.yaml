@@ -32,6 +32,8 @@ whitelisted_users:
 
 # === スパムフィルター設定 ===
 enable_spam_filter: true
+block_all_unauthorized_bots: true  # 許可されていないBOTを全て削除
+block_embeds: false  # 許可されていないBOTの埋め込みを全て削除
 
 # Discord招待リンクをブロック
 block_discord_invites: true

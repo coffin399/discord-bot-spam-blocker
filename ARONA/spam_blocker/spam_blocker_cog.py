@@ -19,6 +19,29 @@ class SpamBlockerCog(commands.Cog):
         print(f'監視対象サーバー: {self.config.get("monitored_guilds", [])}')
         print(f'監視対象チャンネル: {self.config.get("monitored_channels", [])}')
 
+    def should_block_message(self, message):
+        """メッセージをブロックすべきか判定"""
+        # 埋め込みのチェック
+        if message.embeds and self.config.get('block_embeds', False):
+            return True
+
+        # スパムキーワードのチェック
+        spam_keywords = self.config.get('spam_keywords', [])
+        if spam_keywords:
+            content = message.content.lower()
+            for keyword in spam_keywords:
+                if keyword.lower() in content:
+                    return True
+
+            # 埋め込みのタイトル・説明文もチェック
+            for embed in message.embeds:
+                if embed.title and any(keyword.lower() in embed.title.lower() for keyword in spam_keywords):
+                    return True
+                if embed.description and any(keyword.lower() in embed.description.lower() for keyword in spam_keywords):
+                    return True
+
+        return False
+
     @commands.Cog.listener()
     async def on_message(self, message):
         # BOT自身のメッセージは無視
@@ -47,16 +70,40 @@ class SpamBlockerCog(commands.Cog):
         # BOTの場合
         if message.author.bot:
             allowed_bots = self.config.get('allowed_bots', [])
-            # 許可リストに含まれていないBOTのメッセージを削除
-            if str(message.author.id) not in allowed_bots:
+
+            # 許可リストに含まれているBOTはスキップ
+            if str(message.author.id) in allowed_bots:
+                return
+
+            # 許可されていないBOTのメッセージをチェック
+            should_delete = False
+            delete_reason = ""
+
+            # デフォルト: 許可されていないBOTは全て削除
+            if self.config.get('block_all_unauthorized_bots', True):
+                should_delete = True
+                delete_reason = "許可されていないBOT"
+            # または特定の条件でのみ削除
+            elif self.should_block_message(message):
+                should_delete = True
+                delete_reason = "スパムコンテンツを検出"
+
+            if should_delete:
                 await message.delete()
-                print(f'削除: 許可されていないBOT {message.author.name} (ID: {message.author.id})')
+
+                # ログ出力
+                log_msg = f'削除: {delete_reason} {message.author.name} (ID: {message.author.id})'
+                if message.embeds:
+                    log_msg += f' - 埋め込み数: {len(message.embeds)}'
+                print(log_msg)
 
                 # 警告メッセージを送信(オプション)
                 if self.config.get('send_warning', False):
-                    warning = await message.channel.send(
-                        f'⚠️ 許可されていないBOT `{message.author.name}` の投稿を削除しました。'
-                    )
+                    warning_text = f'⚠️ {delete_reason}: `{message.author.name}` の投稿を削除しました'
+                    if message.embeds:
+                        warning_text += f' (埋め込み: {len(message.embeds)}個)'
+
+                    warning = await message.channel.send(warning_text)
                     # 5秒後に警告メッセージも削除
                     await warning.delete(delay=5)
 
@@ -131,6 +178,40 @@ class SpamBlockerCog(commands.Cog):
             await ctx.send(f'✅ チャンネル ID `{channel_id}` を監視対象に追加しました')
         else:
             await ctx.send(f'⚠️ チャンネル ID `{channel_id}` は既に監視対象です')
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def add_keyword(self, ctx, *, keyword: str):
+        """スパムキーワードを追加"""
+        spam_keywords = self.config.get('spam_keywords', [])
+        if keyword not in spam_keywords:
+            spam_keywords.append(keyword)
+            self.config['spam_keywords'] = spam_keywords
+            with open('config.yaml', 'w', encoding='utf-8') as f:
+                yaml.dump(self.config, f, allow_unicode=True)
+            await ctx.send(f'✅ キーワード `{keyword}` をスパムリストに追加しました')
+        else:
+            await ctx.send(f'⚠️ キーワード `{keyword}` は既にスパムリストに含まれています')
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def list_keywords(self, ctx):
+        """スパムキーワード一覧を表示"""
+        keywords = self.config.get('spam_keywords', [])
+        if keywords:
+            keyword_list = '\n'.join([f'- {kw}' for kw in keywords])
+            embed = discord.Embed(
+                title='スパムキーワード一覧',
+                description=keyword_list,
+                color=discord.Color.orange()
+            )
+        else:
+            embed = discord.Embed(
+                title='スパムキーワード一覧',
+                description='登録されているキーワードはありません',
+                color=discord.Color.orange()
+            )
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):
