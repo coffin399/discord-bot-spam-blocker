@@ -103,7 +103,9 @@ async def load_extensions():
     extensions = [
         'ARONA.spam_blocker.spam_blocker_cog',
         'ARONA.music.music_cog',
-        'ARONA.message.welcome_message_cog',  # 新しく追加
+        'ARONA.message.welcome_message_cog',
+        'ARONA.moderation.anti_nuke_cog',
+        'ARONA.moderation.reaction_role_cog',
     ]
 
     for ext in extensions:

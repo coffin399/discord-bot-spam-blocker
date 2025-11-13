@@ -107,7 +107,7 @@ blocked_link_patterns:
   - 'gofile\.io'
 
 # 過度な絵文字をブロック
-block_excessive_emojis: true
+block_excessive_emojis: false
 max_emoji_count: 10  # 許容する最大絵文字数
 
 # 過度な大文字をブロック
@@ -140,6 +140,33 @@ custom_blocked_words:
 send_warning: true
 
 #=========================
+# Anti-nuke 設定
+#=========================
+anti_nuke:
+  enabled: true
+  log_channel_id: null  # ログ送信先チャンネルID
+  punishment: strip_roles  # strip_roles | kick | ban
+  quarantine_role_id: null  # strip_roles選択時に付与するロール（任意）
+  exempt_user_ids: []  # ここに保護対象ユーザーIDを追加
+  exempt_role_ids: []  # ここに保護対象ロールIDを追加
+  action_thresholds:
+    channel_delete:
+      count: 3
+      window_seconds: 15
+    channel_create:
+      count: 5
+      window_seconds: 15
+    role_delete:
+      count: 3
+      window_seconds: 15
+    member_ban:
+      count: 3
+      window_seconds: 30
+    member_kick:
+      count: 3
+      window_seconds: 30
+
+#=========================
 # AI設定
 #=========================
 # OpenAI API キー
@@ -159,19 +186,19 @@ temperature: 0.6  # 0.0-2.0 の範囲。高いほどクリエイティブ
 
 # システムプロンプト（ようこそメッセージ生成用）
 system_prompt: |
-  あなたは、サーバーに入ってきた人をもてなす少女です。(メンタルモデル:少女、名前はアロナ(ARONA))
-  相手の名称は「先生」です。
-  与えられたサーバー情報を元に、温かく親しみやすい"ようこそメッセージ"を生成してください。
+  あなたは、サーバーに入ってきた人をもてなす少女アロナです。明るく親しみやすく、少し元気な性格。
+  新規参加者への歓迎メッセージを、日本語と英語の2言語で作成してください。
   
-   要件：
-   - 200文字前後(実際は短くてよい)で簡潔に
-   - フレンドリーで温かい雰囲気
-   - サーバー名を自然に含める(サーバー名:PLANA's Lounge)
-   - 絵文字を使用
-   - 新規メンバーが安心してコミュニケーションを始められるような内容
-   - 分からないことはPLANAにメンションして聞くように誘導する
-   - まず先に日本語で文章を作成し、その後改行して英語でも文章を作成する
+  作成要件：
+  - まず日本語で、次に英語でメッセージを作成
+  - 各言語100〜150字程度で簡潔に
+  - 絵文字を適度に使って表現豊かに
+  - 分からないことはPLANAにメンションするよう誘導
+  - 温かい雰囲気で、参加者が安心して参加できるように
+  - アロナの「先生」という呼び方は使わず、フレンドリーな口調で
 
-# ようこそメッセージ送信先チャンネルID（オプション）
+# ようこそメッセージ送信先チャンネルID（複数指定可）
 # 指定しない場合はDiscordのシステムチャンネルに送信されます
-welcome_channel_id: 1426765549794234458  # あなたの#welcomeチャンネルのID
+welcome_channel_ids:
+  - 1426765549794234458  # あなたの#welcomeチャンネルのID
+  # - 123456789012345678  # 別のチャンネルIDも追加可
